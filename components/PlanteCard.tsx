@@ -1,8 +1,11 @@
-// src/components/PlantCard.tsx
 import React from 'react';
-import { StyleSheet, Image } from 'react-native';
+import { StyleSheet, Image, Pressable } from 'react-native';
 import { Card } from './Card';
 import { ThemedText } from './ThemedText';
+import { Link } from 'expo-router';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { Colors } from '@/constants/Colors';
+import { truncate } from '@/utils';
 
 interface PlantCardProps {
   imageUrl: string;
@@ -10,15 +13,25 @@ interface PlantCardProps {
   description: string;
   cardColor: string;
   textColor: string;
+  id: number
 }
 
-export function PlanteCard({ imageUrl, name, description, cardColor, textColor }: PlantCardProps) {
+export function PlanteCard({ imageUrl, name, description, cardColor, id, textColor }: PlantCardProps) {
+  const backgroundColor = useThemeColor({ light: Colors.light.tint, dark: Colors.dark.tint }, 'background');
   return (
-    <Card style={[styles.card, { backgroundColor: cardColor }]}>
-      <Image source={{ uri: imageUrl }} style={styles.image} />
-      <ThemedText style={[styles.plantName, { color: textColor }]}>{name}</ThemedText>
-      <ThemedText style={[styles.description, { color: textColor }]}>{description}</ThemedText>
-    </Card>
+    <Link href={{
+      pathname: "/plantes/[id]", params: {
+        id
+      }
+    }} asChild>
+      <Pressable android_ripple={{ color: backgroundColor, foreground: true }} style={styles.card}>
+        <Card style={[{ backgroundColor: cardColor }]}>
+          <Image source={{ uri: imageUrl }} style={styles.image} />
+          <ThemedText style={[styles.plantName, { color: textColor }]}>{name}</ThemedText>
+          <ThemedText style={[styles.description, { color: textColor }]}>{truncate(description, 35)}</ThemedText>
+        </Card>
+      </Pressable>
+    </Link>
   );
 };
 

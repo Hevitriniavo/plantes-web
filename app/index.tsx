@@ -1,68 +1,89 @@
-import React from 'react';
-import { StyleSheet, FlatList, Image, ActivityIndicator, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFetchQuery } from '@/hooks/useFetchQuery';
+import React, { useState } from 'react';
+import { StyleSheet, FlatList, ActivityIndicator, Dimensions } from 'react-native';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useOrientation } from '@/hooks/useOrientation';
 import { Colors } from '@/constants/Colors';
-import * as ScreenOrientation from 'expo-screen-orientation';
 import { PlanteCard } from '@/components/PlanteCard';
+import { RootView } from '@/components/RootView';
+import SearchBar from '@/components/SearchBar';
+import TopScreen from '@/components/TopScreen';
+import EmptyListMessage from '@/components/EmptyListMessage';
+import { useApiQuery } from '@/hooks/useApiQuery';
+import withRedirectAuth from '@/hocs/withRedirectAuth';
+import useAuthStore from '@/hooks/useAuthStore';
 
-export default function Index() {
-  const { data: plantes, isLoading } = useFetchQuery("/plantes");
-  const { orientation } = useOrientation();
+function Home() {
+  const header = useAuthStore.use.getAuthorization()
+  const { data: plantes, isLoading } = useApiQuery("/plantes", {}, {
+    ...header()
+  });
+  const [searchValue, setSearchValue] = useState('');
 
-  const backgroundColor = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, 'background');
+  const filteredPlantes = plantes && searchValue ?
+    plantes.filter(item => item.name.toLowerCase().includes(searchValue.toLowerCase()))
+    : plantes;
+
   const textColor = useThemeColor({ light: Colors.light.text, dark: Colors.dark.text }, 'text');
   const cardColor = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, 'background');
 
+  const { orientation } = useOrientation();
+
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.loaderContainer, { backgroundColor }]}>
-        <ActivityIndicator size="large" />
-      </SafeAreaView>
+      <RootView style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#00ff00" />
+      </RootView>
     );
   }
-  const numColumns =
-  orientation?.value === ScreenOrientation.Orientation.LANDSCAPE_LEFT ||
-  orientation?.value === ScreenOrientation.Orientation.LANDSCAPE_RIGHT
-    ? 4
-    : orientation?.value === ScreenOrientation.Orientation.PORTRAIT_UP ||
-      orientation?.value === ScreenOrientation.Orientation.PORTRAIT_DOWN
-    ? 2
-    : 3;
+
+  const numColumns = Math.floor(Dimensions.get('window').width / 150);
 
   const key = `grid-${numColumns}`;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <RootView>
+      <TopScreen />
+      <SearchBar
+        value={searchValue}
+        onChange={setSearchValue}
+      />
       <FlatList
-        data={plantes}
+        style={styles.contentContainer}
+        data={filteredPlantes}
         numColumns={numColumns}
-        key={key} 
+        key={key}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <PlanteCard
             imageUrl={item.imageUrl}
             name={item.name}
+            id={item.id}
             description={item.description}
             cardColor={cardColor}
             textColor={textColor}
           />
         )}
+        ListEmptyComponent={() => (
+          <EmptyListMessage
+            searchValue={searchValue}
+            textColor={textColor}
+          />
+        )}
       />
-    </SafeAreaView>
+    </RootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 10,
-  },
   loaderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  contentContainer: {
+    paddingHorizontal: 10,
+    paddingBottom: 20,
+  },
 });
+
+export default withRedirectAuth(Home)
