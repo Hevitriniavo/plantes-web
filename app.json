@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "plantes-mob",
+    "name": "Meilleure plante",
     "slug": "plantes-mob",
     "version": "1.0.0",
     "orientation": "default",
@@ -44,7 +44,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "c854aa35-fe9c-446d-b56e-382db9b25879"
+        "projectId": "450d0499-1340-4c01-8038-ddbd1b1e54c1"
       }
     }
   }
